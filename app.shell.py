@@ -114,11 +114,12 @@ def main():
                                     top_k=reranker_topk)
 
             # validate token count is below threshold
+            token_threshold = 8000 if model_name == model_ids[0] else 3500
             valid_response = validate_token_threshold(ranked_response, 
                                                        question_answering_prompt_series, 
                                                        query=query,
                                                        tokenizer= encoding, # variable from ENCODING,
-                                                       token_threshold=4000, 
+                                                       token_threshold=token_threshold, 
                                                        verbose=True)
             ##############
             #  END CODE  #
@@ -127,6 +128,8 @@ def main():
             # generate LLM prompt
             # prompt = generate_prompt_series(base_prompt=question_answering_prompt_series, query=query, results=valid_response)
             prompt = generate_prompt_series(query=query, results=valid_response)
+
+            make_llm_call=True
            
             # prep for streaming response
             st.subheader("Response from Impact Theory (context)")
@@ -139,24 +142,25 @@ def main():
                              ##############
                              # START CODE #
                              ##############
-                for resp in llm.get_chat_completion(prompt=prompt,
-                                    temperature=temperature_input,
-                                    max_tokens=350,
-                                    show_response=True,
-                                    stream=True):
-                    try:
-                        with response_box:
-                            content = resp.choices[0].delta.content
-                            if content:
-                                chat_container.append(content)
-                                result = "".join(chat_container).strip()
-                                st.write(f'{result}')
-                    except Exception as e:
-                        print(e)
-                        continue
-                             ##############
-                             #  END CODE  #
-                             ##############
+                if make_llm_call:
+                    for resp in llm.get_chat_completion(prompt=prompt,
+                                        temperature=temperature_input,
+                                        max_tokens=350,
+                                        show_response=True,
+                                        stream=True):
+                        try:
+                            with response_box:
+                                content = resp.choices[0].delta.content
+                                if content:
+                                    chat_container.append(content)
+                                    result = "".join(chat_container).strip()
+                                    st.write(f'{result}')
+                        except Exception as e:
+                            print(e)
+                            continue
+                            ##############
+                            #  END CODE  #
+                            ##############
             ##############
             # START CODE #
             ##############
